@@ -27,45 +27,54 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     emailRef.current?.focus();
   }, [mode]);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  setStatus('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setStatus('');
 
-  if (!email || !password) {
-    setError('Email and password are required.');
-    return;
-  }
-
-  const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
-  if (isRegister && !strongPasswordRegex.test(password)) {
-    setError('Password must be at least 6 characters, include letters and numbers.');
-    return;
-  }
-
-  try {
-    if (isRegister) {
-      await createUserWithEmailAndPassword(auth, email, password);
-      setStatus('Account created successfully.');
-    } else {
-      await signInWithEmailAndPassword(auth, email, password);
-      setStatus('Signed in successfully.');
+    if (!email || !password) {
+      setError('Email and password are required.');
+      return;
     }
-    onSuccess();
-  } catch (err: unknown) {
-    if (err instanceof FirebaseError) {
-      const message = err.message.includes('auth/') ? err.message.split('auth/')[1].replace(/-/g, ' ') : err.message;
-      setError(`Firebase error: ${message}`);
-    } else {
-      setError('An unexpected error occurred.');
-    }
-  }
-};
 
+    const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
+    if (isRegister && !strongPasswordRegex.test(password)) {
+      setError('Password must be at least 6 characters, include letters and numbers.');
+      return;
+    }
+
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setStatus('Account created successfully.');
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        setStatus('Signed in successfully.');
+      }
+      onSuccess();
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        const code = err.code;
+        switch (code) {
+          case 'auth/user-not-found':
+            setError('No account found with that email.');
+            break;
+          case 'auth/wrong-password':
+            setError('Incorrect password.');
+            break;
+          default:
+            setError(`Authentication error: ${code.replace('auth/', '').replace(/-/g, ' ')}`);
+        }
+      } else {
+        setError('An unexpected error occurred.');
+      }
+    }
+  };
 
   return (
     <form
       onSubmit={handleSubmit}
+      autoComplete="on"
       role="form"
       aria-labelledby="auth-form-title"
       className="max-w-md w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-xl"
@@ -85,17 +94,19 @@ const handleSubmit = async (e: React.FormEvent) => {
         <input
           ref={emailRef}
           id="email"
+          name="email"
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
           aria-required="true"
           aria-describedby={error ? 'form-error' : undefined}
+          autoComplete="username"
           className="w-full rounded-lg border border-slate-600 bg-slate-800 text-white placeholder-white/70 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
-      {/* Password Field with Toggle */}
+      {/* Password Field */}
       <div className="mb-4">
         <label htmlFor="password" className="block text-slate-200 font-medium mb-1">
           Password <span aria-hidden="true">*</span>
@@ -103,6 +114,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         <div className="relative">
           <input
             id="password"
+            name="password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={e => setPassword(e.target.value)}
@@ -110,6 +122,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             aria-required="true"
             minLength={6}
             aria-describedby={`password-help${error ? ' form-error' : ''}`}
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
             className="w-full pr-12 rounded-lg border border-slate-600 bg-slate-800 text-white placeholder-white/70 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
@@ -128,7 +141,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         )}
       </div>
 
-      {/* Error and Status Messages */}
+      {/* Error & Status */}
       {error && (
         <div id="form-error" role="alert" className="text-red-500 text-sm mb-4">
           {error}
@@ -140,13 +153,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       )}
 
-      {/* Submit Button */}
       <button
         type="submit"
-        className="w-full inline-block bg-primary text-white font-semibold px-6 py-3 rounded-lg 
-               border border-2-white hover:bg-white hover:text-slate-900 
-               focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-4 cursor-pointer
-               transition-colors duration-300"
+        className="w-full bg-primary text-white font-semibold px-6 py-3 rounded-lg border border-2-white hover:bg-white hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-4 transition-colors duration-300"
       >
         {isRegister ? 'Sign Up' : 'Sign In'}
       </button>
