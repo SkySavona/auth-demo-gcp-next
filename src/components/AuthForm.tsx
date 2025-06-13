@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -38,8 +39,12 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
         setStatus('Signed in successfully.');
       }
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred.');
+      }
     }
   };
 
@@ -102,9 +107,9 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
       <button
         type="submit"
         className="w-full inline-block bg-primary text-white font-semibold px-6 py-3 rounded-lg 
-             border border-2-white hover:bg-white hover:text-slate-900 
-             focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-4 cursor-pointer
-             transition-colors duration-300"
+               border border-2-white hover:bg-white hover:text-slate-900 
+               focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-4 cursor-pointer
+               transition-colors duration-300"
       >
         {isRegister ? 'Sign Up' : 'Sign In'}
       </button>
