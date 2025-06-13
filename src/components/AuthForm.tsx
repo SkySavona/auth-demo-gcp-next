@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -107,7 +108,7 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
       </div>
 
       {/* Password Field */}
-      <div className="mb-4">
+      <div className="mb-1">
         <label htmlFor="password" className="block text-slate-200 font-medium mb-1">
           Password <span aria-hidden="true">*</span>
         </label>
@@ -134,12 +135,26 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
-        {isRegister && (
-          <p id="password-help" className="mt-2 text-xs text-slate-400">
-            Password must be at least 6 characters and include letters and numbers.
-          </p>
-        )}
       </div>
+
+      {/* Forgot Password Link */}
+      {!isRegister && (
+        <div className="text-right mb-4">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-primary underline hover:text-primary/80 focus:outline-none focus:ring-2 focus:ring-primary rounded"
+          >
+            Forgot Password?
+          </Link>
+        </div>
+      )}
+
+      {/* Password Guidelines */}
+      {isRegister && (
+        <p id="password-help" className="mt-1 mb-4 text-xs text-slate-400">
+          Password must be at least 6 characters and include letters and numbers.
+        </p>
+      )}
 
       {/* Error & Status */}
       {error && (
