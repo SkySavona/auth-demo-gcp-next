@@ -27,27 +27,41 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     emailRef.current?.focus();
   }, [mode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setStatus('');
-    try {
-      if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
-        setStatus('Account created successfully.');
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        setStatus('Signed in successfully.');
-      }
-      onSuccess();
-    } catch (err: unknown) {
-      if (err instanceof FirebaseError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred.');
-      }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  setStatus('');
+
+  if (!email || !password) {
+    setError('Email and password are required.');
+    return;
+  }
+
+  const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
+  if (isRegister && !strongPasswordRegex.test(password)) {
+    setError('Password must be at least 6 characters, include letters and numbers.');
+    return;
+  }
+
+  try {
+    if (isRegister) {
+      await createUserWithEmailAndPassword(auth, email, password);
+      setStatus('Account created successfully.');
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+      setStatus('Signed in successfully.');
     }
-  };
+    onSuccess();
+  } catch (err: unknown) {
+    if (err instanceof FirebaseError) {
+      const message = err.message.includes('auth/') ? err.message.split('auth/')[1].replace(/-/g, ' ') : err.message;
+      setError(`Firebase error: ${message}`);
+    } else {
+      setError('An unexpected error occurred.');
+    }
+  }
+};
+
 
   return (
     <form
