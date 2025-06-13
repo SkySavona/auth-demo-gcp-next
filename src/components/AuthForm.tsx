@@ -1,0 +1,113 @@
+// components/AuthForm.tsx
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
+
+interface AuthFormProps {
+  mode: 'login' | 'register';
+  onSuccess: () => void;
+}
+
+export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
+  const isRegister = mode === 'register';
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [status, setStatus] = useState('');
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, [mode]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setStatus('');
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setStatus('Account created successfully.');
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        setStatus('Signed in successfully.');
+      }
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred.');
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      role="form"
+      aria-labelledby="auth-form-title"
+      className="max-w-md w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-xl"
+    >
+      <h2 id="auth-form-title" className="text-2xl font-bold text-center text-white mb-6">
+        {isRegister ? 'Create Account' : 'Sign In'}
+      </h2>
+
+      <div className="mb-4">
+        <label htmlFor="email" className="block text-slate-200 font-medium mb-1">
+          Email <span aria-hidden="true">*</span>
+        </label>
+        <input
+          ref={emailRef}
+          id="email"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          aria-required="true"
+          aria-describedby={error ? 'form-error' : undefined}
+          className="w-full rounded-lg border border-slate-600 bg-slate-800 text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="password" className="block text-slate-200 font-medium mb-1">
+          Password <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          aria-required="true"
+          minLength={6}
+          aria-describedby={error ? 'form-error' : undefined}
+          className="w-full rounded-lg border border-slate-600 bg-slate-800 text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {error && (
+        <div id="form-error" role="alert" className="text-red-500 text-sm mb-4">
+          {error}
+        </div>
+      )}
+      {status && (
+        <div role="status" className="text-green-400 text-sm mb-4">
+          {status}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        className="w-full inline-block bg-primary text-white font-semibold px-6 py-3 rounded-lg 
+             border border-2-white hover:bg-white hover:text-slate-900 
+             focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-4 cursor-pointer
+             transition-colors duration-300"
+      >
+        {isRegister ? 'Sign Up' : 'Sign In'}
+      </button>
+    </form>
+  );
+}
