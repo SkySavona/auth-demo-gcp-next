@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage('');
     setError('');
@@ -17,8 +17,12 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage('Password reset email sent. Please check your inbox.');
-    } catch (err: any) {
-      setError('Error sending reset email. Please check the email address.');
+    } catch (_error: unknown) {
+      if (_error instanceof Error) {
+        setError(_error.message || 'Error sending reset email. Please check the email address.');
+      } else {
+        setError('An unexpected error occurred.');
+      }
     }
   };
 
@@ -39,6 +43,7 @@ export default function ForgotPasswordPage() {
           id="reset-email"
           name="reset-email"
           type="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
